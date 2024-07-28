@@ -378,12 +378,17 @@ func (pc *PackageBuild) calculateInstalledSize(fsys fs.FS) error {
 
 func (pc *PackageBuild) emitDataSection(ctx context.Context, fsys fs.FS, userinfofs fs.FS, remapUIDs map[int]int, remapGIDs map[int]int, w io.WriteSeeker) error {
 	log := clog.FromContext(ctx)
-	tarctx, err := tarball.NewContext(
+	tarOpts := []tarball.Option{
 		tarball.WithSourceDateEpoch(pc.Build.SourceDateEpoch),
 		tarball.WithRemapUIDs(remapUIDs),
 		tarball.WithRemapGIDs(remapGIDs),
 		tarball.WithUseChecksums(true),
-	)
+	}
+
+	// TODO: Use heuristics to determine if we should use the GRPCFUSEOwnership option
+	tarOpts = append(tarOpts, tarball.WithGRPCFUSEOwnership())
+
+	tarctx, err := tarball.NewContext(tarOpts...)
 	if err != nil {
 		return fmt.Errorf("unable to build tarball context: %w", err)
 	}
